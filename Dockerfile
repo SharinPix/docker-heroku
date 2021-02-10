@@ -1,4 +1,4 @@
-FROM heroku/heroku:18
+FROM heroku/heroku:20
 MAINTAINER Luc Boissaye <luc@boissaye.fr>
 
 RUN apt-get update -qq && \
