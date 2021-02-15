@@ -34,13 +34,14 @@ RUN apt update -qq && \
 #   && google-chrome --version
 
 # Ruby heroku
-RUN apt remove -y --purge ruby && curl -s --retry 3 -L https://heroku-buildpack-ruby.s3.amazonaws.com/heroku-18/ruby-2.6.6.tgz | tar -xz && \
+RUN apt remove -y --purge ruby && curl -s --retry 3 -L https://heroku-buildpack-ruby.s3.amazonaws.com/heroku-20/ruby-2.6.6.tgz | tar -xkz && \
   bundle config --global silence_root_warning 1
+#
+#
+# # Node heroku
+RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/yarn/release/yarn-v1.22.4.tar.gz | tar -xkz -C / --strip-components=1
+RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/node/release/linux-x64/node-v12.18.4-linux-x64.tar.gz | tar -xkz
 
-RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/yarn/release/yarn-v1.22.4.tar.gz | tar -xz -C / --strip-components=1
-
-# Node heroku
-RUN export NODE_VERSION=12.18.2 && curl -s --retry 3 -L https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz | tar -xz -C / --strip-components=1
 
 RUN mkdir sfdx_install && \
     wget -qO- https://developer.salesforce.com/media/salesforce-cli/sfdx-linux-amd64.tar.xz | tar xJ -C sfdx_install --strip-components 1 && \
