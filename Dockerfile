@@ -39,8 +39,8 @@ RUN apt remove -y --purge ruby && curl -s --retry 3 -L https://heroku-buildpack-
 #
 #
 # # Node heroku
-RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/yarn/release/yarn-v1.22.4.tar.gz | tar -xkz -C / --strip-components=1
-RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/node/release/linux-x64/node-v12.18.4-linux-x64.tar.gz | tar -xkz
+RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/yarn/release/yarn-v1.22.4.tar.gz | tar -xkz -C / --strip-components=1 && rm *.md LICENSE
+RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/node/release/linux-x64/node-v12.18.4-linux-x64.tar.gz | tar -xkz -C / --strip-components=1
 
 
 RUN mkdir sfdx_install && \
