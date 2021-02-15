@@ -1,8 +1,8 @@
 FROM heroku/heroku:20
 MAINTAINER Luc Boissaye <luc@boissaye.fr>
 
-RUN apt-get update -qq && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+RUN apt update -qq && \
+  DEBIAN_FRONTEND=noninteractive apt install -y -qq --no-install-recommends \
     build-essential\
     libpq-dev\
     libxml2-dev\
@@ -19,13 +19,13 @@ RUN apt-get update -qq && \
     libnss3 \
     libgconf-2-4 \
     sudo \
-  && apt-get autoremove \
-  && apt-get autoclean \
+  && apt autoremove \
+  && apt autoclean \
   && rm -rf /var/lib/apt/lists/* \
   && truncate -s 0 /var/log/*log
 
 
-RUN apt-get update -qq \
+RUN apt update -qq \
   && wget -q https://s3.amazonaws.com/sharinpix-chrome/chrome62.deb -O chrome.deb \
   && apt install -y -qq ./chrome.deb \
   && rm chrome.deb \
@@ -36,7 +36,7 @@ RUN apt-get update -qq \
   && google-chrome --version
 
 # Ruby heroku
-RUN apt-get remove -y --purge ruby && curl -s --retry 3 -L https://heroku-buildpack-ruby.s3.amazonaws.com/heroku-18/ruby-2.6.6.tgz | tar -xz && \
+RUN apt remove -y --purge ruby && curl -s --retry 3 -L https://heroku-buildpack-ruby.s3.amazonaws.com/heroku-18/ruby-2.6.6.tgz | tar -xz && \
   bundle config --global silence_root_warning 1
 
 RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/yarn/release/yarn-v1.22.4.tar.gz | tar -xz -C / --strip-components=1
