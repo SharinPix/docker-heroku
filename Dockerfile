@@ -12,10 +12,8 @@ RUN apt update -qq && \
     gstreamer1.0-plugins-base\
     gstreamer1.0-tools\
     gstreamer1.0-x\
-    xvfb \
+    tar \
     ruby-dev \
-    wget \
-    unzip \
     libnss3 \
     libgconf-2-4 \
     sudo \
@@ -25,15 +23,15 @@ RUN apt update -qq && \
   && truncate -s 0 /var/log/*log
 
 
-RUN apt update -qq \
-  && wget -q https://s3.amazonaws.com/sharinpix-chrome/chrome62.deb -O chrome.deb \
-  && apt install -y -qq ./chrome.deb \
-  && rm chrome.deb \
-  && apt-get autoremove \
-  && apt-get autoclean \
-  && rm -rf /var/lib/apt/lists/* \
-  && truncate -s 0 /var/log/*log \
-  && google-chrome --version
+# RUN apt update -qq \
+#   && wget -q https://s3.amazonaws.com/sharinpix-chrome/chrome62.deb -O chrome.deb \
+#   && apt install -y -qq ./chrome.deb \
+#   && rm chrome.deb \
+#   && apt-get autoremove \
+#   && apt-get autoclean \
+#   && rm -rf /var/lib/apt/lists/* \
+#   && truncate -s 0 /var/log/*log \
+#   && google-chrome --version
 
 # Ruby heroku
 RUN apt remove -y --purge ruby && curl -s --retry 3 -L https://heroku-buildpack-ruby.s3.amazonaws.com/heroku-18/ruby-2.6.6.tgz | tar -xz && \
