@@ -23,25 +23,14 @@ RUN apt update -qq && \
   && truncate -s 0 /var/log/*log
 
 
-# RUN apt update -qq \
-#   && wget -q https://s3.amazonaws.com/sharinpix-chrome/chrome62.deb -O chrome.deb \
-#   && apt install -y -qq ./chrome.deb \
-#   && rm chrome.deb \
-#   && apt-get autoremove \
-#   && apt-get autoclean \
-#   && rm -rf /var/lib/apt/lists/* \
-#   && truncate -s 0 /var/log/*log \
-#   && google-chrome --version
-
 # Ruby heroku
 RUN apt remove -y --purge ruby && curl -s --retry 3 -L https://heroku-buildpack-ruby.s3.amazonaws.com/heroku-20/ruby-2.6.6.tgz | tar -xkz && \
-  bundle config --global silence_root_warning 1
-#
-#
-# # Node heroku
+  bundle config --global silence_root_warning 1 &&  apt update -qq && apt install -y -qq --no-install-recommends ruby-dev && \
+  apt autoremove && apt autoclean  && rm -rf /var/lib/apt/lists/* && truncate -s 0 /var/log/*log
+
+# Node heroku
 RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/yarn/release/yarn-v1.22.4.tar.gz | tar -xkz -C / --strip-components=1 && rm *.md LICENSE
 RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/node/release/linux-x64/node-v12.18.4-linux-x64.tar.gz | tar -xkz -C / --strip-components=1
-
 
 RUN mkdir sfdx_install && \
     wget -qO- https://developer.salesforce.com/media/salesforce-cli/sfdx-linux-amd64.tar.xz | tar xJ -C sfdx_install --strip-components 1 && \
