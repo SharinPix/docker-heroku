@@ -36,11 +36,10 @@ RUN apt-get update -qq \
   && google-chrome --version
 
 # Ruby heroku
-RUN apt-get remove -y --purge ruby && curl -s --retry 3 -L https://heroku-buildpack-ruby.s3.amazonaws.com/heroku-18/ruby-2.6.6.tgz | tar -xz && \
+RUN apt-get remove -y --purge ruby && curl -s --retry 3 -L https://heroku-buildpack-ruby.s3.amazonaws.com/heroku-18/ruby-2.7.2.tgz | tar -xz && \
   bundle config --global silence_root_warning 1
 
 RUN curl -s --retry 3 -L https://s3.amazonaws.com/heroku-nodebin/yarn/release/yarn-v1.22.4.tar.gz | tar -xz -C / --strip-components=1
-
 # Node heroku
 RUN export NODE_VERSION=12.18.2 && curl -s --retry 3 -L https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz | tar -xz -C / --strip-components=1
 
