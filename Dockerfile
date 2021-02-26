@@ -10,9 +10,6 @@ RUN apt-get update -qq && \
     libssl-dev libreadline-dev zlib1g-dev \
     # postgres
     libpq-dev \
-    # Nokogiri
-    libxml2-dev \
-    libxslt1-dev \
   && apt-get clean \
   && rm -rf /var/cache/apt/archives/* \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
