@@ -17,6 +17,9 @@ RUN apt-get update -qq && \
 
 RUN adduser --gecos '' user && passwd -d user
 
+RUN mkdir /app
+RUN chown user:user /app
+
 USER user
 
 ENV PATH="/home/user/.rbenv/bin:/home/user/.rbenv/shims:$PATH"
@@ -29,7 +32,7 @@ RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/master/bin/
 ENV NVM_DIR /home/user/.nvm
 RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 12.18.2 && npm install --global yarn@1.22.4"
 
-WORKDIR /home/user/app
+WORKDIR /app
 
 EXPOSE 5000
 
