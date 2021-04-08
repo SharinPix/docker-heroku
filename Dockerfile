@@ -30,6 +30,7 @@ RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/master/bin/
   bash -c "/home/user/.rbenv/shims/gem install bundler:1.17.3"
 
 ENV NVM_DIR /home/user/.nvm
+ENV PATH="$NVM_DIR/versions/node/v12.18.2/bin:$PATH"
 RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 12.18.2 && npm install --global yarn@1.22.4"
 
 WORKDIR /app
