@@ -17,8 +17,7 @@ RUN apt-get update -qq && \
 
 RUN adduser --gecos '' user && passwd -d user
 
-RUN mkdir /app
-RUN chown user:user /app
+RUN mkdir /app && mkdir /bundle && chown user:user /app /bundle
 
 USER user
 
