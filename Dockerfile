@@ -32,6 +32,9 @@ ENV NVM_DIR /home/user/.nvm
 ENV PATH="$NVM_DIR/versions/node/v12.18.2/bin:$PATH"
 RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 12.18.2 && npm install --global yarn@1.22.4"
 
+# https://thoughtbot.com/blog/git-safe
+ENV PATH="./.git/safe/../../bin:$PATH"
+
 WORKDIR /app
 
 EXPOSE 5000
