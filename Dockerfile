@@ -22,15 +22,15 @@ RUN mkdir /app && mkdir /bundle && chown user:user /app /bundle
 USER user
 
 ENV PATH="/home/user/.rbenv/bin:/home/user/.rbenv/shims:$PATH"
-RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/master/bin/rbenv-installer | bash" && \
+RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash" && \
   bash -c "rbenv install 2.7.3" && \
   echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
   bash -c "rbenv global 2.7.3" && \
   bash -c "/home/user/.rbenv/shims/gem install bundler:1.17.3"
 
 ENV NVM_DIR /home/user/.nvm
-ENV PATH="$NVM_DIR/versions/node/v12.18.2/bin:$PATH"
-RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 12.18.2 && npm install --global yarn@1.22.4"
+ENV PATH="$NVM_DIR/versions/node/v14.17.0/bin:$PATH"
+RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 14.17.0 && npm install --global yarn@1.22.4"
 
 # https://thoughtbot.com/blog/git-safe
 ENV PATH="./.git/safe/../../bin:$PATH"
