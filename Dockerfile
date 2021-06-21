@@ -17,7 +17,7 @@ RUN apt-get update -qq && \
 
 RUN adduser --gecos '' user && passwd -d user
 
-RUN mkdir /app && mkdir /bundle && mkdir /home/user/.sfdx && chown user:user /app /bundle /home/user/.sfdx
+RUN mkdir /app && mkdir /bundle && mkdir /home/user/.sfdx && mkdir /sfdx && chown user:user /app /bundle /home/user/.sfdx /sfdx
 
 USER user
 
@@ -34,6 +34,8 @@ RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/insta
 
 # https://thoughtbot.com/blog/git-safe
 ENV PATH="./.git/safe/../../bin:$PATH"
+# for sfdx
+ENV PATH="/sfdx/bin:$PATH"
 
 WORKDIR /app
 
