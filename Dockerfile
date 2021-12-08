@@ -39,9 +39,7 @@ ENV NVM_DIR /home/user/.nvm
 ENV PATH="$NVM_DIR/versions/node/v14.18.2/bin:$PATH"
 RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 14.18.2 && npm install --global yarn@1.22.15"
 
-
-# https://thoughtbot.com/blog/git-safe
-ENV PATH="./.git/safe/../../bin:$PATH"
+ENV PATH="./bin:$PATH:./node_modules/.bin/"
 
 WORKDIR /app
 
