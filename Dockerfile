@@ -24,7 +24,6 @@ RUN mkdir -p /nginx && cd /nginx && \
   wget -q --tries 3 -L https://raw.githubusercontent.com/heroku/heroku-buildpack-nginx/main/bin/start-nginx && \
   chmod +x /nginx/start-nginx && \
   chown -R user:user /nginx
-ENV PORT="5000"
 
 USER user
 
