@@ -29,14 +29,14 @@ USER user
 
 ENV PATH="/home/user/.rbenv/bin:/home/user/.rbenv/shims:$PATH"
 RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash" && \
-  bash -c "rbenv install 2.7.5" && \
+  bash -c "rbenv install 2.7.6" && \
   echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
-  bash -c "rbenv global 2.7.5" && \
+  bash -c "rbenv global 2.7.6" && \
   bash -c "/home/user/.rbenv/shims/gem install bundler"
 
 ENV NVM_DIR /home/user/.nvm
 ENV PATH="$NVM_DIR/versions/node/v14.18.2/bin:$PATH"
-RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 14.18.2 && npm install --global yarn@1.22.15"
+RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 16.15.0 && npm install --global yarn@1.22.18"
 
 ENV PATH="./bin:$PATH:./node_modules/.bin/"
 
