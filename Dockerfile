@@ -29,7 +29,7 @@ USER user
 
 ENV PATH="/home/user/.rbenv/bin:/home/user/.rbenv/shims:$PATH"
 RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash" && \
-  bash -c "rbenv install 3.1.1j" && \
+  bash -c "rbenv install 3.1.1" && \
   echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
   bash -c "rbenv global 3.1.1" && \
   bash -c "/home/user/.rbenv/shims/gem install bundler"
