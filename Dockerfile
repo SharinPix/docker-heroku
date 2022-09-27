@@ -1,4 +1,4 @@
-FROM heroku/heroku:20
+FROM heroku/heroku:22
 
 RUN apt-get update -qq && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
@@ -20,7 +20,7 @@ RUN adduser --gecos '' user && passwd -d user
 RUN mkdir /app && mkdir /bundle && mkdir /home/user/.sfdx && chown user:user /app /bundle /home/user/.sfdx
 
 RUN mkdir -p /nginx && cd /nginx && \
-  curl -s --retry 3 -L https://raw.githubusercontent.com/heroku/heroku-buildpack-nginx/main/nginx-heroku-20.tgz | tar -xvz -C /nginx && \
+  curl -s --retry 3 -L https://raw.githubusercontent.com/heroku/heroku-buildpack-nginx/main/nginx-heroku-22.tgz | tar -xvz -C /nginx && \
   wget -q --tries 3 -L https://raw.githubusercontent.com/heroku/heroku-buildpack-nginx/main/bin/start-nginx && \
   chmod +x /nginx/start-nginx && \
   chown -R user:user /nginx
