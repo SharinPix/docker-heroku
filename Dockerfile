@@ -1,6 +1,6 @@
 FROM heroku/heroku:22
 
-RUN apt update -qq && \
+RUN apt-get update -qq && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
     # for ruby-dev
     build-essential\
