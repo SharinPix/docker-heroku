@@ -7,7 +7,7 @@ RUN apt-get update -qq && \
     git \
     vim \
     # for rbenv
-    libssl-dev libreadline-dev zlib1g-dev \
+    libssl-dev libreadline-dev zlib1g-dev libtool autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev \
     # for postgres
     libpq-dev \
   && apt-get clean \
