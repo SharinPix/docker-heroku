@@ -47,6 +47,9 @@ RUN /bin/bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/
 
 ENV PATH="./bin:$PATH:./node_modules/.bin/"
 
+# SFDX
+RUN npm install -g @salesforce/cli
+
 WORKDIR /app
 
 EXPOSE 5000
