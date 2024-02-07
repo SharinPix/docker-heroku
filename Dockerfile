@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 ubuntu:22.04
+FROM ubuntu:22.04
 # FROM heroku/heroku:22
 
 RUN apt-get update -qq && \
@@ -22,12 +22,7 @@ RUN apt-get update -qq && \
 
 RUN adduser --gecos '' user && passwd -d user
 
-RUN mkdir /app && mkdir /bundle && mkdir /home/user/.sfdx && chown user:user /app /bundle /home/user/.sfdx
-
-RUN mkdir -p /nginx && cd /nginx && \
-  wget -q --tries 3 -L https://raw.githubusercontent.com/heroku/heroku-buildpack-nginx/main/bin/start-nginx && \
-  chmod +x /nginx/start-nginx && \
-  chown -R user:user /nginx
+RUN mkdir /app && mkdir /nginx && mkdir /bundle && mkdir /home/user/.sfdx && chown user:user /app /bundle /home/user/.sfdx /nginx /var/log/nginx
 
 USER user
 
@@ -49,6 +44,14 @@ ENV PATH="./bin:$PATH:./node_modules/.bin/"
 
 # SFDX
 RUN npm install -g @salesforce/cli
+
+# Nginx
+RUN git clone  --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx &&  \
+/nginx/scripts/build_nginx /nginx/nginx.tgz && \
+cat /nginx/nginx.tgz | tar -xvz -C /nginx  && \
+cp /nginx/bin/start-nginx /nginx/ && \
+chmod +x /nginx/start-nginx /nginx/nginx && \
+rm -rvf *.tgz .git *.md
 
 WORKDIR /app
 
