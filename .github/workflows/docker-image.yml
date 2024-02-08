@@ -21,4 +21,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: sharinpix/docker-heroku:pr-${{ github.event.number }}
+          tags: sharinpix/docker-heroku:pr-gh-${{ github.event.number }}
