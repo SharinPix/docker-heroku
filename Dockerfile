@@ -10,11 +10,12 @@ RUN apt-get update -qq && \
     git \
     vim \
     nginx \
+    ca-certificates \
     # for rbenv
     libssl-dev libreadline-dev zlib1g-dev \
     # for postgres
+    postgresql-client \
     libpq-dev \
-    ca-certificates \
   && apt-get clean \
   && rm -rf /var/cache/apt/archives/* \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
