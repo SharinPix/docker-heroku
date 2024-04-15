@@ -13,9 +13,17 @@ RUN apt-get update -qq && \
     ca-certificates \
     # for rbenv
     libssl-dev libreadline-dev zlib1g-dev \
-    # for postgres
-    postgresql-client \
-    libpq-dev \
+    gnupg2 lsb-release \
+  && apt-get clean \
+  && rm -rf /var/cache/apt/archives/* \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && truncate -s 0 /var/log/*log
+
+RUN sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' \
+  && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+  && apt-get update -qq \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+  postgresql-client libpq-dev \
   && apt-get clean \
   && rm -rf /var/cache/apt/archives/* \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
