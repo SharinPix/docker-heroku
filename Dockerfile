@@ -35,9 +35,9 @@ RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rb
   bash -c "/home/user/.rbenv/shims/gem install bundler"
 
 ENV NVM_DIR /home/user/.nvm
-ENV PATH="$NVM_DIR/versions/node/v18.16.0/bin:$PATH"
+ENV PATH="$NVM_DIR/versions/node/v18.19.1/bin:$PATH"
 
-RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 18.16.0 && npm install --global yarn@1.22.19"
+RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 18.19.1 && npm install --global yarn@1.22.19"
 
 ENV PATH="./bin:$PATH:./node_modules/.bin/"
 
