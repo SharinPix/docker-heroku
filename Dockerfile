@@ -52,11 +52,8 @@ RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/insta
 
 ENV PATH="./bin:$PATH:./node_modules/.bin/"
 
-# TIMEOUT (https://github.com/docker/build-push-action/issues/471)
-RUN npm ci --timeout=1000000
-
 # SFDX
-RUN npm install -g @salesforce/cli
+RUN yarn global add @salesforce/cli
 
 # Nginx
 RUN git clone  --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx &&  \
