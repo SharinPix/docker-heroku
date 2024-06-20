@@ -7,7 +7,7 @@ RUN apt-get update -qq && \
     git \
     vim \
     # for rbenv
-    libssl-dev libreadline-dev zlib1g-dev \
+    libssl-dev libreadline-dev zlib1g-dev libtool autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev \
     # for postgres
     libpq-dev \
   && apt-get clean \
@@ -29,9 +29,9 @@ USER user
 
 ENV PATH="/home/user/.rbenv/bin:/home/user/.rbenv/shims:$PATH"
 RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash" && \
-  bash -c "rbenv install 3.1.2" && \
+  bash -c "rbenv install 3.2.2" && \
   echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
-  bash -c "rbenv global 3.1.2" && \
+  bash -c "rbenv global 3.2.2" && \
   bash -c "/home/user/.rbenv/shims/gem install bundler"
 
 ENV NVM_DIR /home/user/.nvm
