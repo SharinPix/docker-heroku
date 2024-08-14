@@ -12,7 +12,7 @@ RUN apt-get update -qq && \
     nginx \
     ca-certificates \
     # for rbenv
-    libssl-dev libreadline-dev zlib1g-dev \
+    libssl-dev libreadline-dev zlib1g-dev libffi-dev \
     gnupg2 lsb-release \
   && apt-get clean \
   && rm -rf /var/cache/apt/archives/* \
