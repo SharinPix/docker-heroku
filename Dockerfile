@@ -45,7 +45,7 @@ RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rb
   bash -c "/home/user/.rbenv/shims/gem install bundler"
 
 # Node
-ENV NVM_DIR /home/user/.nvm
+ENV NVM_DIR=/home/user/.nvm
 ENV PATH="$NVM_DIR/versions/node/v20.16.0/bin:$PATH"
 
 RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 20.16.0 && npm install --global yarn@1.22.19"
@@ -67,4 +67,4 @@ WORKDIR /app
 
 EXPOSE 5000
 
-CMD bash
+CMD ['bash']
