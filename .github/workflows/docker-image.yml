@@ -23,4 +23,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: sharinpix/docker-heroku:${{ (github.ref == 'refs/heads/main') && 'latest' || format('pr-gh-{0}', github.event.number) }}
+          tags: sharinpix/docker-heroku:${{ (github.ref == 'refs/heads/main') && 'latest' || format('pr-gh-{0}', github.run_number) }}
