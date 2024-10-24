@@ -55,7 +55,7 @@ ENV PATH="./bin:$PATH:./node_modules/.bin/"
 # SFDX
 RUN yarn global add @salesforce/cli
 
-RUN npm install playwright
+RUN bash -c "npm install playwright"
 RUN bash -c "./node_modules/.bin/playwright install"
 RUN bash -c "./node_modules/.bin/playwright install-deps"
 
