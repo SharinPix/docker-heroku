@@ -56,8 +56,8 @@ ENV PATH="./bin:$PATH:./node_modules/.bin/"
 RUN yarn global add @salesforce/cli
 
 RUN yarn global add playwright
-RUN yarn run playwright install
-RUN yarn run playwright install-deps
+RUN playwright install
+RUN playwright install-deps
 
 # Nginx
 RUN git clone  --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx &&  \
