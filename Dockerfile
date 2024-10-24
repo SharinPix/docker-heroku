@@ -57,7 +57,9 @@ RUN yarn global add @salesforce/cli
 
 RUN bash -c "npm install --global playwright"
 RUN playwright install
+USER root
 RUN playwright install-deps
+USER user
 
 # Nginx
 RUN git clone  --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx &&  \
