@@ -40,8 +40,8 @@ RUN bash -c "git clone https://github.com/rbenv/rbenv.git ~/.rbenv"
 ENV PATH="/home/user/.rbenv/bin:/home/user/.rbenv/shims:$PATH"
 RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash" && \
   echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
-  bash -c "rbenv install 3.1.2" && \
-  bash -c "rbenv global 3.1.2" && \
+  bash -c "rbenv install 3.2.5" && \
+  bash -c "rbenv global 3.2.5" && \
   bash -c "/home/user/.rbenv/shims/gem install bundler"
 
 # Node
@@ -54,6 +54,12 @@ ENV PATH="./bin:$PATH:./node_modules/.bin/"
 
 # SFDX
 RUN yarn global add @salesforce/cli
+
+RUN bash -c "npm install --global playwright"
+RUN playwright install
+USER root
+RUN playwright install-deps
+USER user
 
 # Nginx
 RUN git clone  --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx &&  \
