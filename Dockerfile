@@ -29,7 +29,11 @@ RUN sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
   && truncate -s 0 /var/log/*log
 
-RUN adduser --gecos '' user && passwd -d user
+# Remove the default ubuntu user (UID 1000 in Ubuntu 24.04) and create our user with UID 1000
+# This prevents permission conflicts when mounting volumes
+RUN (id ubuntu &>/dev/null && userdel -r ubuntu) || true && \
+    adduser --uid 1000 --gecos '' --disabled-password user && \
+    passwd -d user
 
 RUN mkdir /app && mkdir /nginx && mkdir /bundle && mkdir /home/user/.sfdx && chown user:user /app /bundle /home/user/.sfdx /nginx /var/log/nginx
 
