@@ -52,12 +52,15 @@ RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rb
 ENV NVM_DIR=/home/user/.nvm
 ENV PATH="$NVM_DIR/versions/node/v22.21.1/bin:$PATH"
 
-RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash" && bash -c "source $NVM_DIR/nvm.sh && nvm install 22.21.1 && npm install --global yarn@1.22.19"
+RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 22.21.1 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup"
 
+# Set environment
 ENV PATH="./bin:$PATH:./node_modules/.bin/"
+ENV PNPM_HOME="/home/user/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 
 # SFDX
-RUN yarn global add @salesforce/cli
+RUN bash -c "source $NVM_DIR/nvm.sh && pnpm add -g @salesforce/cli"
 
 # Nginx
 RUN git clone  --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx &&  \
