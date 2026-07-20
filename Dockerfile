@@ -44,8 +44,8 @@ RUN bash -c "git clone https://github.com/rbenv/rbenv.git ~/.rbenv"
 ENV PATH="/home/user/.rbenv/bin:/home/user/.rbenv/shims:$PATH"
 RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash" && \
   echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
-  bash -c "rbenv install 4.0.2" && \
-  bash -c "rbenv global 4.0.2" && \
+  bash -c "rbenv install 4.0.6" && \
+  bash -c "rbenv global 4.0.6" && \
   bash -c "/home/user/.rbenv/shims/gem install bundler"
 
 # Node
