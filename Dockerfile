@@ -84,6 +84,12 @@ RUN git clone --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-ngin
   chmod +x /nginx/start-nginx /nginx/nginx && \
   rm -rf /nginx/.git /nginx/nginx.tgz /nginx/*.md
 
+# Alpine's /etc/profile replaces PATH on login shells, which drops rbenv,
+# Node, and pnpm. Put them back before the rbenv snippet in ~/.bash_profile.
+RUN printf '%s\n' 'export PATH="/home/node/.local/share/pnpm:/home/node/.nvm/versions/node/v22.21.1/bin:/home/node/.rbenv/bin:/home/node/.rbenv/shims:$PATH"' \
+  | cat - /home/node/.bash_profile > /home/node/.bash_profile.new \
+  && mv /home/node/.bash_profile.new /home/node/.bash_profile
+
 WORKDIR /app/ember
 
 EXPOSE 5000
