@@ -50,9 +50,9 @@ RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rb
 
 # Node
 ENV NVM_DIR=/home/user/.nvm
-ENV PATH="$NVM_DIR/versions/node/v22.21.1/bin:$PATH"
+ENV PATH="$NVM_DIR/versions/node/v24.21.0/bin:$PATH"
 
-RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 22.21.1 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup && pnpm config set store-dir /app/.pnpm-store"
+RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 24.21.0 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup && pnpm config set store-dir /app/.pnpm-store"
 
 # Set environment
 ENV PATH="./bin:$PATH:./node_modules/.bin/"
