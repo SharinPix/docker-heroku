@@ -1,62 +1,76 @@
-FROM ubuntu:24.04
-# FROM heroku/heroku:22
+FROM alpine:3.24
 
-RUN apt-get update -qq && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-    # for ruby-dev
+# Alpine equivalents of the Ubuntu build packages. libstdc++ is required by
+# the musl Node binaries. postgresql18-client and libpq-dev replace the
+# Ubuntu postgresql-client and libpq-dev packages.
+RUN apk add --no-cache \
+    bash \
     curl \
     wget \
-    build-essential\
+    build-base \
+    linux-headers \
     git \
     vim \
-    nginx \
     ca-certificates \
-    # for rbenv
-    libssl-dev libreadline-dev zlib1g-dev libffi-dev libyaml-dev \
-    gnupg2 lsb-release \
-  && apt-get clean \
-  && rm -rf /var/cache/apt/archives/* \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-  && truncate -s 0 /var/log/*log
+    openssl \
+    openssl-dev \
+    readline-dev \
+    zlib-dev \
+    libffi-dev \
+    yaml-dev \
+    gnupg \
+    postgresql18-client \
+    libpq \
+    libpq-dev \
+    libstdc++ \
+    tar \
+    gzip \
+    xz \
+    coreutils \
+    findutils \
+    procps \
+    patch \
+    autoconf \
+    bison \
+    pkgconf \
+    bzip2-dev \
+    gdbm-dev \
+    ncurses-dev \
+    python3
 
-RUN sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' \
-  && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-  && apt-get update -qq \
-  && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-  postgresql-client libpq-dev \
-  && apt-get clean \
-  && rm -rf /var/cache/apt/archives/* \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-  && truncate -s 0 /var/log/*log
+# Alpine has no default ubuntu user. Create node with UID 1000 so bind
+# mounts from a typical developer host do not hit permission conflicts.
+RUN adduser -D -u 1000 -s /bin/bash node
 
-# Remove the default ubuntu user (UID 1000 in Ubuntu 24.04) and create our user with UID 1000
-# This prevents permission conflicts when mounting volumes
-RUN (id ubuntu &>/dev/null && userdel -r ubuntu) || true && \
-    adduser --uid 1000 --gecos '' --disabled-password user && \
-    passwd -d user
+RUN mkdir -p /app /nginx /bundle /home/node/.sfdx /var/log/nginx \
+  && chown -R node:node /app /bundle /home/node/.sfdx /nginx /var/log/nginx /home/node
 
-RUN mkdir /app && mkdir /nginx && mkdir /bundle && mkdir /home/user/.sfdx && mkdir /app/.pnpm-store && chown user:user /app /bundle /home/user/.sfdx /nginx /var/log/nginx /app/.pnpm-store
+RUN mkdir -p /home/node/npm /app/.pnpm-store /app/ember/tmp && chown -R node:node /home/node/npm /app/.pnpm-store /app/ember/tmp /app/ember
 
-USER user
+USER node
 
 # Ruby
 RUN bash -c "git clone https://github.com/rbenv/rbenv.git ~/.rbenv"
-ENV PATH="/home/user/.rbenv/bin:/home/user/.rbenv/shims:$PATH"
+ENV PATH="/home/node/.rbenv/bin:/home/node/.rbenv/shims:$PATH"
 RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash" && \
-  echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
-  bash -c "rbenv install 4.0.6" && \
+  echo 'eval "$(rbenv init -)"' >> /home/node/.bashrc && \
+  MAKE_OPTS="-j2" bash -c "rbenv install 4.0.6" && \
   bash -c "rbenv global 4.0.6" && \
-  bash -c "/home/user/.rbenv/shims/gem install bundler"
+  bash -c "/home/node/.rbenv/shims/gem install bundler"
 
-# Node
-ENV NVM_DIR=/home/user/.nvm
+# Node. Official nodejs.org tarballs are glibc-linked and do not run on
+# Alpine, so install the musl builds. v22.21.1 is published for both
+# x64-musl and arm64-musl.
+ENV NVM_DIR=/home/node/.nvm
+ENV NVM_NODEJS_ORG_MIRROR=https://unofficial-builds.nodejs.org/download/release
 ENV PATH="$NVM_DIR/versions/node/v22.21.1/bin:$PATH"
+ENV npm_config_cache=/home/node/npm
 
-RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 22.21.1 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup && pnpm config set store-dir /app/.pnpm-store"
+RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 22.21.1 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup && pnpm config set store-dir /app/.pnpm-store"
 
 # Set environment
 ENV PATH="./bin:$PATH:./node_modules/.bin/"
-ENV PNPM_HOME="/home/user/.local/share/pnpm"
+ENV PNPM_HOME="/home/node/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 # SFDX
@@ -70,7 +84,7 @@ RUN git clone --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-ngin
   chmod +x /nginx/start-nginx /nginx/nginx && \
   rm -rf /nginx/.git /nginx/nginx.tgz /nginx/*.md
 
-WORKDIR /app
+WORKDIR /app/ember
 
 EXPOSE 5000
 
