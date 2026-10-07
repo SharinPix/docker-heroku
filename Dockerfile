@@ -91,7 +91,7 @@ RUN printf '%s\n' 'export PATH="/home/node/.local/share/pnpm:/home/node/.nvm/ver
   | cat - /home/node/.bash_profile > /home/node/.bash_profile.new \
   && mv /home/node/.bash_profile.new /home/node/.bash_profile
 
-WORKDIR /app/ember
+WORKDIR /app
 
 EXPOSE 5000
 
