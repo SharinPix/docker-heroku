@@ -56,7 +56,8 @@ RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rb
   echo 'eval "$(rbenv init -)"' >> /home/node/.bashrc && \
   MAKE_OPTS="-j2" bash -c "rbenv install 4.0.6" && \
   bash -c "rbenv global 4.0.6" && \
-  bash -c "/home/node/.rbenv/shims/gem install bundler"
+  bash -c "/home/node/.rbenv/shims/gem install bundler" && \
+  rm -rf /home/node/.rbenv/cache /tmp/*
 
 # Node. Official nodejs.org tarballs are glibc-linked and do not run on
 # Alpine, so install the musl builds. v22.21.1 is published for both
@@ -66,7 +67,7 @@ ENV NVM_NODEJS_ORG_MIRROR=https://unofficial-builds.nodejs.org/download/release
 ENV PATH="$NVM_DIR/versions/node/v22.21.1/bin:$PATH"
 ENV npm_config_cache=/home/node/npm
 
-RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 22.21.1 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup && pnpm config set store-dir /app/.pnpm-store"
+RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 22.21.1 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup && pnpm config set store-dir /app/.pnpm-store && npm cache clean --force && rm -rf /home/node/.cache/pnpm /tmp/* && mkdir -p /home/node/npm"
 
 # Set environment
 ENV PATH="./bin:$PATH:./node_modules/.bin/"
@@ -74,7 +75,7 @@ ENV PNPM_HOME="/home/node/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 # SFDX
-RUN bash -c "source $NVM_DIR/nvm.sh && pnpm add -g @salesforce/cli"
+RUN bash -c "source $NVM_DIR/nvm.sh && pnpm add -g @salesforce/cli && rm -rf /home/node/.cache/pnpm /tmp/*"
 
 # Nginx (build_nginx defaults to zlib 1.3.1; zlib.net no longer hosts that tarball — use 1.3.2)
 RUN git clone --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx && \
@@ -82,7 +83,7 @@ RUN git clone --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-ngin
   cat /nginx/nginx.tgz | tar -xvz -C /nginx && \
   cp /nginx/bin/start-nginx /nginx/ && \
   chmod +x /nginx/start-nginx /nginx/nginx && \
-  rm -rf /nginx/.git /nginx/nginx.tgz /nginx/*.md
+  rm -rf /nginx/.git /nginx/nginx.tgz /nginx/*.md /tmp/*
 
 # Alpine's /etc/profile replaces PATH on login shells, which drops rbenv,
 # Node, and pnpm. Put them back before the rbenv snippet in ~/.bash_profile.
