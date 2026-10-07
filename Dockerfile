@@ -46,13 +46,14 @@ RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rb
   echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
   bash -c "rbenv install 4.0.6" && \
   bash -c "rbenv global 4.0.6" && \
-  bash -c "/home/user/.rbenv/shims/gem install bundler"
+  bash -c "/home/user/.rbenv/shims/gem install bundler" && \
+  rm -rf /home/user/.rbenv/cache
 
 # Node
 ENV NVM_DIR=/home/user/.nvm
 ENV PATH="$NVM_DIR/versions/node/v22.21.1/bin:$PATH"
 
-RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 22.21.1 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup && pnpm config set store-dir /app/.pnpm-store"
+RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 22.21.1 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup && pnpm config set store-dir /app/.pnpm-store && rm -rf /home/user/.npm"
 
 # Set environment
 ENV PATH="./bin:$PATH:./node_modules/.bin/"
@@ -60,7 +61,7 @@ ENV PNPM_HOME="/home/user/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 # SFDX
-RUN bash -c "source $NVM_DIR/nvm.sh && pnpm add -g @salesforce/cli"
+RUN bash -c "source $NVM_DIR/nvm.sh && pnpm add -g @salesforce/cli && rm -rf /home/user/.cache/pnpm"
 
 # Nginx (build_nginx defaults to zlib 1.3.1; zlib.net no longer hosts that tarball — use 1.3.2)
 RUN git clone --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx && \
@@ -68,7 +69,7 @@ RUN git clone --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-ngin
   cat /nginx/nginx.tgz | tar -xvz -C /nginx && \
   cp /nginx/bin/start-nginx /nginx/ && \
   chmod +x /nginx/start-nginx /nginx/nginx && \
-  rm -rf /nginx/.git /nginx/nginx.tgz /nginx/*.md
+  rm -rf /nginx/.git /nginx/nginx.tgz /nginx/*.md /tmp/*
 
 WORKDIR /app
 
