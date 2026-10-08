@@ -1,8 +1,6 @@
 FROM node:22.21.1-alpine AS node
 
-# Prebuilt Ruby 4.0.6 on Alpine 3.24. Node 22.21.1 is copied from the
-# official Alpine image instead of being compiled in this build.
-FROM ruby:4.0.6-alpine
+FROM ruby:4.0.7-alpine
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
