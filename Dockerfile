@@ -1,74 +1,83 @@
-FROM ubuntu:24.04
-# FROM heroku/heroku:22
+FROM node:22.21.1-bookworm AS node
+
+# Prebuilt Ruby 4.0.7. Node and the remaining tools are added on top.
+FROM ruby:4.0.7-bookworm
+
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node /usr/local/include/node /usr/local/include/node
+
+RUN ln -sf node /usr/local/bin/nodejs \
+  && ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+  && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+  && ln -sf ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack
 
 RUN apt-get update -qq && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-    # for ruby-dev
     curl \
     wget \
-    build-essential\
     git \
     vim \
     nginx \
     ca-certificates \
-    # for rbenv
-    libssl-dev libreadline-dev zlib1g-dev libffi-dev libyaml-dev \
-    gnupg2 lsb-release \
-  && apt-get clean \
-  && rm -rf /var/cache/apt/archives/* \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-  && truncate -s 0 /var/log/*log
-
-RUN sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' \
-  && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+    libssl-dev \
+    libreadline-dev \
+    zlib1g-dev \
+    libffi-dev \
+    libyaml-dev \
+    libyaml-0-2 \
+    libffi8 \
+    libssl3 \
+    libgmp10 \
+    libcrypt1 \
+    libpcre2-8-0 \
+  && install -d /usr/share/keyrings \
+  && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql.gpg \
+  && . /etc/os-release \
+  && echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
   && apt-get update -qq \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-  postgresql-client libpq-dev \
+    postgresql-client \
+    libpq-dev \
   && apt-get clean \
-  && rm -rf /var/cache/apt/archives/* \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
   && truncate -s 0 /var/log/*log
 
-# Remove the default ubuntu user (UID 1000 in Ubuntu 24.04) and create our user with UID 1000
-# This prevents permission conflicts when mounting volumes
-RUN (id ubuntu &>/dev/null && userdel -r ubuntu) || true && \
-    adduser --uid 1000 --gecos '' --disabled-password user && \
-    passwd -d user
+# UID 1000 stays stable so bind mounts from a developer machine keep working.
+RUN adduser --uid 1000 --gecos '' --disabled-password user \
+  && passwd -d user
 
-RUN mkdir /app && mkdir /nginx && mkdir /bundle && mkdir /home/user/.sfdx && mkdir /app/.pnpm-store && chown user:user /app /bundle /home/user/.sfdx /nginx /var/log/nginx /app/.pnpm-store
+RUN mkdir -p /app /nginx /bundle /home/user/.sfdx /app/.pnpm-store \
+  && chown user:user /app /bundle /home/user/.sfdx /nginx /var/log/nginx /app/.pnpm-store /home/user
+
+ARG TARGETARCH
+RUN case "$TARGETARCH" in \
+      amd64|arm64) ;; \
+      *) echo "unsupported TARGETARCH: ${TARGETARCH:-empty}" >&2; exit 1 ;; \
+    esac \
+  && curl -fsSL "https://github.com/heroku/heroku-buildpack-nginx/raw/refs/heads/main/nginx-heroku-24-${TARGETARCH}.tgz" \
+      | tar -xz -C /nginx \
+  && curl -fsSL -o /nginx/start-nginx https://raw.githubusercontent.com/heroku/heroku-buildpack-nginx/main/bin/start-nginx \
+  && chmod +x /nginx/start-nginx /nginx/nginx \
+  && rm -rf /tmp/* \
+  && chown -R user:user /nginx
+
+ENV PNPM_HOME="/home/user/.local/share/pnpm"
+ENV PATH="${PNPM_HOME}:/home/user/.local/bin:/usr/local/bin:${PATH}:./bin:./node_modules/.bin"
+ENV npm_config_store_dir="/app/.pnpm-store"
+
+RUN printf '%s\n' \
+  'export PNPM_HOME=/home/user/.local/share/pnpm' \
+  'export PATH="$PNPM_HOME:/home/user/.local/bin:/usr/local/bin:./bin:$PATH:./node_modules/.bin"' \
+  > /etc/profile.d/dev-tools.sh
 
 USER user
 
-# Ruby
-RUN bash -c "git clone https://github.com/rbenv/rbenv.git ~/.rbenv"
-ENV PATH="/home/user/.rbenv/bin:/home/user/.rbenv/shims:$PATH"
-RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash" && \
-  echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
-  bash -c "rbenv install 4.0.6" && \
-  bash -c "rbenv global 4.0.6" && \
-  bash -c "/home/user/.rbenv/shims/gem install bundler"
-
-# Node
-ENV NVM_DIR=/home/user/.nvm
-ENV PATH="$NVM_DIR/versions/node/v22.21.1/bin:$PATH"
-
-RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 22.21.1 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup && pnpm config set store-dir /app/.pnpm-store"
-
-# Set environment
-ENV PATH="./bin:$PATH:./node_modules/.bin/"
-ENV PNPM_HOME="/home/user/.local/share/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-
-# SFDX
-RUN bash -c "source $NVM_DIR/nvm.sh && pnpm add -g @salesforce/cli"
-
-# Nginx (build_nginx defaults to zlib 1.3.1; zlib.net no longer hosts that tarball — use 1.3.2)
-RUN git clone --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx && \
-  ZLIB_VERSION=1.3.2 /nginx/scripts/build_nginx /nginx/nginx.tgz && \
-  cat /nginx/nginx.tgz | tar -xvz -C /nginx && \
-  cp /nginx/bin/start-nginx /nginx/ && \
-  chmod +x /nginx/start-nginx /nginx/nginx && \
-  rm -rf /nginx/.git /nginx/nginx.tgz /nginx/*.md
+RUN npm install --global pnpm@10.27.0 --prefix /home/user/.local \
+  && pnpm config set store-dir /app/.pnpm-store \
+  && SHELL=bash pnpm setup \
+  && pnpm add -g @salesforce/cli \
+  && rm -rf /home/user/.npm /home/user/.cache/pnpm /tmp/*
 
 WORKDIR /app
 
