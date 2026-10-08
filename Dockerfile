@@ -69,6 +69,7 @@ RUN case "$TARGETARCH" in \
       | tar -xz -C /nginx \
   && curl -fsSL -o /nginx/start-nginx https://raw.githubusercontent.com/heroku/heroku-buildpack-nginx/main/bin/start-nginx \
   && chmod +x /nginx/start-nginx /nginx/nginx \
+  && rm -rf /tmp/* \
   && chown -R user:user /nginx
 
 ENV PNPM_HOME="/home/user/.local/share/pnpm"
@@ -85,7 +86,8 @@ USER user
 RUN npm install --global pnpm@10.27.0 --prefix /home/user/.local \
   && pnpm config set store-dir /app/.pnpm-store \
   && SHELL=bash pnpm setup \
-  && pnpm add -g @salesforce/cli
+  && pnpm add -g @salesforce/cli \
+  && rm -rf /home/user/.npm /home/user/.cache/pnpm /tmp/*
 
 WORKDIR /app
 
