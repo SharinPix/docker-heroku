@@ -1,28 +1,13 @@
-FROM ruby:4.0.7-bookworm AS ruby
 FROM node:22.21.1-bookworm AS node
 
-# Heroku-24 is the prebuilt Ubuntu 24.04 stack for both amd64 and arm64, and
-# its build image already contains the compiler toolchain. Ruby, Node, and
-# Nginx are unpacked from prebuilt images and archives.
-FROM heroku/heroku:24-build
-
-USER root
-
-RUN mkdir -p /usr/local/lib/pkgconfig
-
-COPY --from=ruby /usr/local/bin/ /usr/local/bin/
-COPY --from=ruby /usr/local/include/ruby-4.0.0 /usr/local/include/ruby-4.0.0
-COPY --from=ruby /usr/local/lib/libruby.so.4.0.7 /usr/local/lib/libruby.so.4.0.7
-COPY --from=ruby /usr/local/lib/ruby /usr/local/lib/ruby
-COPY --from=ruby /usr/local/lib/pkgconfig/ruby-4.0.pc /usr/local/lib/pkgconfig/ruby-4.0.pc
+# Prebuilt Ruby 4.0.7. Node and the remaining tools are added on top.
+FROM ruby:4.0.7-bookworm
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node /usr/local/include/node /usr/local/include/node
 
-RUN ln -sf libruby.so.4.0.7 /usr/local/lib/libruby.so.4.0 \
-  && ln -sf libruby.so.4.0.7 /usr/local/lib/libruby.so \
-  && ln -sf node /usr/local/bin/nodejs \
+RUN ln -sf node /usr/local/bin/nodejs \
   && ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
   && ln -sf ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack
@@ -46,6 +31,12 @@ RUN apt-get update -qq && \
     libgmp10 \
     libcrypt1 \
     libpcre2-8-0 \
+  && install -d /usr/share/keyrings \
+  && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql.gpg \
+  && . /etc/os-release \
+  && echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+  && apt-get update -qq \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
     postgresql-client \
     libpq-dev \
   && apt-get clean \
@@ -53,8 +44,7 @@ RUN apt-get update -qq && \
   && truncate -s 0 /var/log/*log
 
 # UID 1000 stays stable so bind mounts from a developer machine keep working.
-RUN usermod -l user -d /home/user -m heroku \
-  && groupmod -n user heroku \
+RUN adduser --uid 1000 --gecos '' --disabled-password user \
   && passwd -d user
 
 RUN mkdir -p /app /nginx /bundle /home/user/.sfdx /app/.pnpm-store \
