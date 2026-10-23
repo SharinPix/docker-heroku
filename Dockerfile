@@ -72,7 +72,8 @@ RUN <<'EOF'
 set -eu
 chmod 644 /etc/redis/tls/*.crt /etc/redis/tls/*.dh
 chmod 600 /etc/redis/tls/*.key
-cat > /etc/redis/redis.conf <<'CNF'
+mkdir -p /usr/local/etc/redis
+cat > /usr/local/etc/redis/redis.conf <<'CNF'
 tls-port 6379
 port 0
 tls-cert-file /etc/redis/tls/redis.crt
@@ -84,10 +85,10 @@ tls-auth-clients optional
 appendonly yes
 appendfsync always
 CNF
-chown redis:redis /etc/redis/redis.conf
-chmod 640 /etc/redis/redis.conf
+chown redis:redis /usr/local/etc/redis/redis.conf
+chmod 640 /usr/local/etc/redis/redis.conf
 EOF
 
 EXPOSE 6379
 
-CMD ["redis-server", "/etc/redis/redis.conf"]
+CMD ["redis-server", "/usr/local/etc/redis/redis.conf"]
