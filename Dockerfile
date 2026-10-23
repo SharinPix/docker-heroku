@@ -1,9 +1,9 @@
-# Redis 8 with test TLS certificates generated when the image is built.
+# Redis 8 TLS server without the Redis Stack modules.
 # X.509 dates cannot go past 9999, so every certificate expires at
 # 9999-12-31 23:59:59Z, the latest value the format can store.
-FROM redis:8-alpine AS certs
+FROM redis:8-alpine AS redis
 
-USER root
+FROM alpine:3.23 AS certs
 
 RUN apk add --no-cache openssl
 
@@ -64,15 +64,25 @@ chmod 644 ./*.crt ./redis.dh
 chmod 600 ./*.key
 EOF
 
-FROM redis:8-alpine
+FROM alpine:3.23
 
+RUN apk add --no-cache libssl3 setpriv \
+  && addgroup -g 1000 -S redis \
+  && adduser -S -D -H -u 999 -G redis redis \
+  && mkdir -p /data /usr/local/etc/redis /usr/local/lib/redis/modules \
+  && chown redis:redis /data
+
+COPY --from=redis \
+  /usr/local/bin/redis-server \
+  /usr/local/bin/redis-cli \
+  /usr/local/bin/docker-entrypoint.sh \
+  /usr/local/bin/
 COPY --from=certs --chown=redis:redis /etc/redis/tls /etc/redis/tls
 
 RUN <<'EOF'
 set -eu
 chmod 644 /etc/redis/tls/*.crt /etc/redis/tls/*.dh
 chmod 600 /etc/redis/tls/*.key
-mkdir -p /usr/local/etc/redis
 cat > /usr/local/etc/redis/redis.conf <<'CNF'
 tls-port 6379
 port 0
@@ -89,6 +99,10 @@ chown redis:redis /usr/local/etc/redis/redis.conf
 chmod 640 /usr/local/etc/redis/redis.conf
 EOF
 
+VOLUME /data
+WORKDIR /data
+
 EXPOSE 6379
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["redis-server", "/usr/local/etc/redis/redis.conf"]
