@@ -1,96 +1,108 @@
-FROM ruby:4.0.7-bookworm AS ruby
-FROM node:22.21.1-bookworm AS node
+# Redis 8 TLS server without the Redis Stack modules.
+# X.509 dates cannot go past 9999, so every certificate expires at
+# 9999-12-31 23:59:59Z, the latest value the format can store.
+FROM redis:8-alpine AS redis
 
-# Heroku-24 is the prebuilt Ubuntu 24.04 stack for both amd64 and arm64, and
-# its build image already contains the compiler toolchain. Ruby, Node, and
-# Nginx are unpacked from prebuilt images and archives.
-FROM heroku/heroku:24-build
+FROM alpine:3.23 AS certs
 
-USER root
+RUN apk add --no-cache openssl
 
-RUN mkdir -p /usr/local/lib/pkgconfig
+RUN <<'EOF'
+set -eu
+mkdir -p /etc/redis/tls
+cd /etc/redis/tls
 
-COPY --from=ruby /usr/local/bin/ /usr/local/bin/
-COPY --from=ruby /usr/local/include/ruby-4.0.0 /usr/local/include/ruby-4.0.0
-COPY --from=ruby /usr/local/lib/libruby.so.4.0.7 /usr/local/lib/libruby.so.4.0.7
-COPY --from=ruby /usr/local/lib/ruby /usr/local/lib/ruby
-COPY --from=ruby /usr/local/lib/pkgconfig/ruby-4.0.pc /usr/local/lib/pkgconfig/ruby-4.0.pc
+openssl genrsa -out ca.key 4096
+openssl req \
+  -x509 -new -nodes -sha256 \
+  -key ca.key \
+  -not_after 99991231235959Z \
+  -subj '/O=Redis Test/CN=Certificate Authority' \
+  -out ca.crt
 
-COPY --from=node /usr/local/bin/node /usr/local/bin/node
-COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node /usr/local/include/node /usr/local/include/node
+cat > openssl.cnf <<'CNF'
+[ server_cert ]
+keyUsage = digitalSignature, keyEncipherment
+nsCertType = server
+[ client_cert ]
+keyUsage = digitalSignature, keyEncipherment
+nsCertType = client
+CNF
 
-RUN ln -sf libruby.so.4.0.7 /usr/local/lib/libruby.so.4.0 \
-  && ln -sf libruby.so.4.0.7 /usr/local/lib/libruby.so \
-  && ln -sf node /usr/local/bin/nodejs \
-  && ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
-  && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
-  && ln -sf ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack
+generate_cert() {
+  name=$1
+  cn=$2
+  shift 2
 
-RUN apt-get update -qq && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-    curl \
-    wget \
-    git \
-    vim \
-    nginx \
-    ca-certificates \
-    libssl-dev \
-    libreadline-dev \
-    zlib1g-dev \
-    libffi-dev \
-    libyaml-dev \
-    libyaml-0-2 \
-    libffi8 \
-    libssl3 \
-    libgmp10 \
-    libcrypt1 \
-    libpcre2-8-0 \
-    postgresql-client \
-    libpq-dev \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-  && truncate -s 0 /var/log/*log
+  openssl genrsa -out "${name}.key" 2048
+  openssl req \
+    -new -sha256 \
+    -subj "/O=Redis Test/CN=${cn}" \
+    -key "${name}.key" \
+    -out "${name}.csr"
+  openssl x509 \
+    -req -sha256 \
+    -in "${name}.csr" \
+    -CA ca.crt \
+    -CAkey ca.key \
+    -CAserial ca.txt \
+    -CAcreateserial \
+    -not_after 99991231235959Z \
+    "$@" \
+    -out "${name}.crt"
+  rm -f "${name}.csr"
+  openssl verify -CAfile ca.crt "${name}.crt"
+}
 
-# UID 1000 stays stable so bind mounts from a developer machine keep working.
-RUN usermod -l user -d /home/user -m heroku \
-  && groupmod -n user heroku \
-  && passwd -d user
+generate_cert server "Server-only" -extfile openssl.cnf -extensions server_cert
+generate_cert client "Client-only" -extfile openssl.cnf -extensions client_cert
+generate_cert redis "Generic-cert"
 
-RUN mkdir -p /app /nginx /bundle /home/user/.sfdx /app/.pnpm-store \
-  && chown user:user /app /bundle /home/user/.sfdx /nginx /var/log/nginx /app/.pnpm-store /home/user
+openssl dhparam -out redis.dh 2048
+rm -f openssl.cnf ca.txt
+chmod 644 ./*.crt ./redis.dh
+chmod 600 ./*.key
+EOF
 
-ARG TARGETARCH
-RUN case "$TARGETARCH" in \
-      amd64|arm64) ;; \
-      *) echo "unsupported TARGETARCH: ${TARGETARCH:-empty}" >&2; exit 1 ;; \
-    esac \
-  && curl -fsSL "https://github.com/heroku/heroku-buildpack-nginx/raw/refs/heads/main/nginx-heroku-24-${TARGETARCH}.tgz" \
-      | tar -xz -C /nginx \
-  && curl -fsSL -o /nginx/start-nginx https://raw.githubusercontent.com/heroku/heroku-buildpack-nginx/main/bin/start-nginx \
-  && chmod +x /nginx/start-nginx /nginx/nginx \
-  && rm -rf /tmp/* \
-  && chown -R user:user /nginx
+FROM alpine:3.23
 
-ENV PNPM_HOME="/home/user/.local/share/pnpm"
-ENV PATH="${PNPM_HOME}:/home/user/.local/bin:/usr/local/bin:${PATH}:./bin:./node_modules/.bin"
-ENV npm_config_store_dir="/app/.pnpm-store"
+RUN apk add --no-cache libssl3 setpriv \
+  && addgroup -g 1000 -S redis \
+  && adduser -S -D -H -u 999 -G redis redis \
+  && mkdir -p /data /usr/local/etc/redis /usr/local/lib/redis/modules \
+  && chown redis:redis /data
 
-RUN printf '%s\n' \
-  'export PNPM_HOME=/home/user/.local/share/pnpm' \
-  'export PATH="$PNPM_HOME:/home/user/.local/bin:/usr/local/bin:./bin:$PATH:./node_modules/.bin"' \
-  > /etc/profile.d/dev-tools.sh
+COPY --from=redis \
+  /usr/local/bin/redis-server \
+  /usr/local/bin/redis-cli \
+  /usr/local/bin/docker-entrypoint.sh \
+  /usr/local/bin/
+COPY --from=certs --chown=redis:redis /etc/redis/tls /etc/redis/tls
 
-USER user
+RUN <<'EOF'
+set -eu
+chmod 644 /etc/redis/tls/*.crt /etc/redis/tls/*.dh
+chmod 600 /etc/redis/tls/*.key
+cat > /usr/local/etc/redis/redis.conf <<'CNF'
+tls-port 6379
+port 0
+tls-cert-file /etc/redis/tls/redis.crt
+tls-key-file /etc/redis/tls/redis.key
+tls-ca-cert-file /etc/redis/tls/ca.crt
+tls-dh-params-file /etc/redis/tls/redis.dh
+requirepass pass
+tls-auth-clients optional
+appendonly yes
+appendfsync always
+CNF
+chown redis:redis /usr/local/etc/redis/redis.conf
+chmod 640 /usr/local/etc/redis/redis.conf
+EOF
 
-RUN npm install --global pnpm@10.27.0 --prefix /home/user/.local \
-  && pnpm config set store-dir /app/.pnpm-store \
-  && SHELL=bash pnpm setup \
-  && pnpm add -g @salesforce/cli \
-  && rm -rf /home/user/.npm /home/user/.cache/pnpm /tmp/*
+VOLUME /data
+WORKDIR /data
 
-WORKDIR /app
+EXPOSE 6379
 
-EXPOSE 5000
-
-CMD ["bash"]
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["redis-server", "/usr/local/etc/redis/redis.conf"]
