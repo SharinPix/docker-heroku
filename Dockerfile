@@ -68,9 +68,11 @@ FROM redis:8-alpine
 
 COPY --from=certs --chown=redis:redis /etc/redis/tls /etc/redis/tls
 
-RUN chmod 644 /etc/redis/tls/*.crt /etc/redis/tls/*.dh \
-  && chmod 600 /etc/redis/tls/*.key \
-  && cat > /etc/redis/redis.conf <<'EOF'
+RUN <<'EOF'
+set -eu
+chmod 644 /etc/redis/tls/*.crt /etc/redis/tls/*.dh
+chmod 600 /etc/redis/tls/*.key
+cat > /etc/redis/redis.conf <<'CNF'
 tls-port 6379
 port 0
 tls-cert-file /etc/redis/tls/redis.crt
@@ -81,9 +83,10 @@ requirepass pass
 tls-auth-clients optional
 appendonly yes
 appendfsync always
+CNF
+chown redis:redis /etc/redis/redis.conf
+chmod 640 /etc/redis/redis.conf
 EOF
-  && chown redis:redis /etc/redis/redis.conf \
-  && chmod 640 /etc/redis/redis.conf
 
 EXPOSE 6379
 
