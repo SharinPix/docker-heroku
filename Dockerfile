@@ -1,6 +1,6 @@
 # Redis 8 with test TLS certificates generated when the image is built.
-# The CA is valid for 3650 days from the build. The server, client, and
-# redis certificates are valid for 825 days from the build.
+# X.509 dates cannot go past 9999, so every certificate expires at
+# 9999-12-31 23:59:59Z, the latest value the format can store.
 FROM redis:8-alpine AS certs
 
 USER root
@@ -16,7 +16,7 @@ openssl genrsa -out ca.key 4096
 openssl req \
   -x509 -new -nodes -sha256 \
   -key ca.key \
-  -days 3650 \
+  -not_after 99991231235959Z \
   -subj '/O=Redis Test/CN=Certificate Authority' \
   -out ca.crt
 
@@ -47,7 +47,7 @@ generate_cert() {
     -CAkey ca.key \
     -CAserial ca.txt \
     -CAcreateserial \
-    -days 825 \
+    -not_after 99991231235959Z \
     "$@" \
     -out "${name}.crt"
   rm -f "${name}.csr"
