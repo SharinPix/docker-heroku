@@ -66,14 +66,25 @@ EOF
 
 FROM redis:8-alpine
 
-COPY redis/entrypoint.sh /usr/local/bin/docker-entrypoint-tls.sh
 COPY --from=certs --chown=redis:redis /etc/redis/tls /etc/redis/tls
 
-RUN chmod 755 /usr/local/bin/docker-entrypoint-tls.sh \
-  && chmod 644 /etc/redis/tls/*.crt /etc/redis/tls/*.dh \
-  && chmod 600 /etc/redis/tls/*.key
+RUN chmod 644 /etc/redis/tls/*.crt /etc/redis/tls/*.dh \
+  && chmod 600 /etc/redis/tls/*.key \
+  && cat > /etc/redis/redis.conf <<'EOF'
+tls-port 6379
+port 0
+tls-cert-file /etc/redis/tls/redis.crt
+tls-key-file /etc/redis/tls/redis.key
+tls-ca-cert-file /etc/redis/tls/ca.crt
+tls-dh-params-file /etc/redis/tls/redis.dh
+requirepass pass
+tls-auth-clients optional
+appendonly yes
+appendfsync always
+EOF
+  && chown redis:redis /etc/redis/redis.conf \
+  && chmod 640 /etc/redis/redis.conf
 
 EXPOSE 6379
 
-ENTRYPOINT ["docker-entrypoint-tls.sh"]
-CMD ["redis-server"]
+CMD ["redis-server", "/etc/redis/redis.conf"]
