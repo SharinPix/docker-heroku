@@ -1,5 +1,5 @@
 FROM ruby:4.0.7-bookworm AS ruby
-FROM node:22.21.1-bookworm AS node
+FROM node:24.22.1-bookworm AS node
 
 # Heroku-24 is the prebuilt Ubuntu 24.04 stack for both amd64 and arm64, and
 # its build image already contains the compiler toolchain. Ruby, Node, and
