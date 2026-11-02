@@ -1,21 +1,77 @@
-FROM alpine:3.16
+FROM ubuntu:24.04
+# FROM heroku/heroku:22
 
-ENV ES_VERSION=7.10.2
-ENV ES_HOME=/usr/share/elasticsearch
-ENV JAVA_HOME=/usr/lib/jvm/default-jvm
+RUN apt-get update -qq && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+    # for ruby-dev
+    curl \
+    wget \
+    build-essential\
+    git \
+    vim \
+    nginx \
+    ca-certificates \
+    # for rbenv
+    libssl-dev libreadline-dev zlib1g-dev libffi-dev libyaml-dev \
+    gnupg2 lsb-release \
+  && apt-get clean \
+  && rm -rf /var/cache/apt/archives/* \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && truncate -s 0 /var/log/*log
 
-# openjdk11-jre-headless keeps the image small; gcompat provides glibc bindings for JNA
-RUN apk add --no-cache openjdk11-jre-headless bash curl gcompat su-exec && \
-    addgroup -g 1000 -S elasticsearch && \
-    adduser -u 1000 -S elasticsearch -G elasticsearch -h ${ES_HOME}
+RUN sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' \
+  && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+  && apt-get update -qq \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+  postgresql-client libpq-dev \
+  && apt-get clean \
+  && rm -rf /var/cache/apt/archives/* \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && truncate -s 0 /var/log/*log
 
-RUN mkdir -p ${ES_HOME} && \
-    curl -fsSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${ES_VERSION}-no-jdk-linux-x86_64.tar.gz \
-    | tar -xz --strip-components=1 -C ${ES_HOME} && \
-    chown -R elasticsearch:elasticsearch ${ES_HOME}
+# Remove the default ubuntu user (UID 1000 in Ubuntu 24.04) and create our user with UID 1000
+# This prevents permission conflicts when mounting volumes
+RUN (id ubuntu &>/dev/null && userdel -r ubuntu) || true && \
+    adduser --uid 1000 --gecos '' --disabled-password user && \
+    passwd -d user
 
-WORKDIR ${ES_HOME}
-USER elasticsearch
+RUN mkdir /app && mkdir /nginx && mkdir /bundle && mkdir /home/user/.sfdx && mkdir /app/.pnpm-store && chown user:user /app /bundle /home/user/.sfdx /nginx /var/log/nginx /app/.pnpm-store
 
-EXPOSE 9200 9300
-CMD ["./bin/elasticsearch"]
+USER user
+
+# Ruby
+RUN bash -c "git clone https://github.com/rbenv/rbenv.git ~/.rbenv"
+ENV PATH="/home/user/.rbenv/bin:/home/user/.rbenv/shims:$PATH"
+RUN bash -c "curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash" && \
+  echo 'eval "$(rbenv init -)"' >> /home/user/.bashrc && \
+  bash -c "rbenv install 4.0.6" && \
+  bash -c "rbenv global 4.0.6" && \
+  bash -c "/home/user/.rbenv/shims/gem install bundler"
+
+# Node
+ENV NVM_DIR=/home/user/.nvm
+ENV PATH="$NVM_DIR/versions/node/v24.21.0/bin:$PATH"
+
+RUN bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash && source $NVM_DIR/nvm.sh && nvm install 24.21.0 && npm install --global pnpm@10.27.0 && SHELL=bash pnpm setup && pnpm config set store-dir /app/.pnpm-store"
+
+# Set environment
+ENV PATH="./bin:$PATH:./node_modules/.bin/"
+ENV PNPM_HOME="/home/user/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+# SFDX
+RUN bash -c "source $NVM_DIR/nvm.sh && pnpm add -g @salesforce/cli"
+
+# Nginx (build_nginx defaults to zlib 1.3.1; zlib.net no longer hosts that tarball — use 1.3.2)
+RUN git clone --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx && \
+  ZLIB_VERSION=1.3.2 /nginx/scripts/build_nginx /nginx/nginx.tgz && \
+  cat /nginx/nginx.tgz | tar -xvz -C /nginx && \
+  cp /nginx/bin/start-nginx /nginx/ && \
+  chmod +x /nginx/start-nginx /nginx/nginx && \
+  rm -rf /nginx/.git /nginx/nginx.tgz /nginx/*.md
+
+WORKDIR /app
+
+EXPOSE 5000
+
+CMD ["bash"]
