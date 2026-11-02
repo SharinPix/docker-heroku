@@ -2,7 +2,7 @@ on:
   push
 
 env:
-  IMAGE: sharinpix/docker-heroku:${{ (github.ref == 'refs/heads/main') && 'latest' || format('pr-gh-{0}', github.run_number) }}
+  IMAGE: sharinpix/docker-elasticsearch:${{ (github.ref == 'refs/heads/main') && 'latest' || format('pr-gh-{0}', github.run_number) }}
 
 permissions:
   contents: read
@@ -38,7 +38,7 @@ jobs:
         with:
           context: .
           platforms: ${{ matrix.platform }}
-          outputs: type=image,name=sharinpix/docker-heroku,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=sharinpix/docker-elasticsearch,push-by-digest=true,name-canonical=true,push=true
           provenance: false
           cache-from: type=gha,scope=${{ matrix.cache-scope }}
           cache-to: type=gha,mode=max,scope=${{ matrix.cache-scope }}
@@ -78,6 +78,6 @@ jobs:
         run: |
           args=()
           while IFS= read -r digest; do
-            args+=("sharinpix/docker-heroku@sha256:${digest}")
+            args+=("sharinpix/docker-elasticsearch@sha256:${digest}")
           done < <(find . -type f -printf '%f\n')
           docker buildx imagetools create -t "$IMAGE" "${args[@]}"
