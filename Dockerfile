@@ -1,4 +1,4 @@
-FROM ruby:4.0.7-bookworm AS ruby
+FROM ruby:4.0.10-bookworm AS ruby
 FROM node:24.22.1-bookworm AS node
 
 # Heroku-24 is the prebuilt Ubuntu 24.04 stack for both amd64 and arm64, and
@@ -12,7 +12,7 @@ RUN mkdir -p /usr/local/lib/pkgconfig
 
 COPY --from=ruby /usr/local/bin/ /usr/local/bin/
 COPY --from=ruby /usr/local/include/ruby-4.0.0 /usr/local/include/ruby-4.0.0
-COPY --from=ruby /usr/local/lib/libruby.so.4.0.7 /usr/local/lib/libruby.so.4.0.7
+COPY --from=ruby /usr/local/lib/libruby.so.4.0.10 /usr/local/lib/libruby.so.4.0.10
 COPY --from=ruby /usr/local/lib/ruby /usr/local/lib/ruby
 COPY --from=ruby /usr/local/lib/pkgconfig/ruby-4.0.pc /usr/local/lib/pkgconfig/ruby-4.0.pc
 
@@ -20,8 +20,8 @@ COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node /usr/local/include/node /usr/local/include/node
 
-RUN ln -sf libruby.so.4.0.7 /usr/local/lib/libruby.so.4.0 \
-  && ln -sf libruby.so.4.0.7 /usr/local/lib/libruby.so \
+RUN ln -sf libruby.so.4.0.10 /usr/local/lib/libruby.so.4.0 \
+  && ln -sf libruby.so.4.0.10 /usr/local/lib/libruby.so \
   && ln -sf node /usr/local/bin/nodejs \
   && ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
