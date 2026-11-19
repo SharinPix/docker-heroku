@@ -62,8 +62,9 @@ ENV PATH="$PNPM_HOME:$PATH"
 # SFDX
 RUN bash -c "source $NVM_DIR/nvm.sh && pnpm add -g @salesforce/cli"
 
-# Nginx (build_nginx defaults to zlib 1.3.1; zlib.net no longer hosts that tarball — use 1.3.2)
+# Nginx (zlib.net only hosts the latest zlib tarball, so fetch it from GitHub releases instead)
 RUN git clone --depth 1 -b patch-1 https://github.com/ombr/heroku-buildpack-nginx.git /nginx && \
+  sed -i 's|^zlib_url=.*|zlib_url=https://github.com/madler/zlib/releases/download/v${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz|' /nginx/scripts/build_nginx && \
   ZLIB_VERSION=1.3.2 /nginx/scripts/build_nginx /nginx/nginx.tgz && \
   cat /nginx/nginx.tgz | tar -xvz -C /nginx && \
   cp /nginx/bin/start-nginx /nginx/ && \
